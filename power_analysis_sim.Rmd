@@ -32,7 +32,7 @@ We can calculate the power to detect the model mispecification using simulation 
 ```{r simsem_mispec,echo=FALSE,message=FALSE,warning=FALSE}
 #https://github.com/simsem/simsem/wiki/Example-21:-Power-of-Rejecting-Misspecified-Models-with-Varying-Sample-Size
 
-myN<-300
+myN<-400
 #--------------------------------------------------------------#
 #Setup factor loadings matrix
 loading.null <- matrix(0, 6, 2)
@@ -83,8 +83,8 @@ plotCutoff(Output.NULL, alpha = 0.05)
 
 ```{r simsem_mispec2,echo=TRUE,message=FALSE,warning=FALSE}
 
-round(getPowerFit(Output.ALT, nullObject = Output.NULL, alpha = 0.05, nVal = myN),2)
-round(getPowerFit(Output.ALT, cutoff = cutoff, nVal = myN, condCutoff = TRUE),2)
+getPowerFit(Output.ALT, nullObject = Output.NULL, alpha = 0.05, nVal = myN)
+getPowerFit(Output.ALT, cutoff = cutoff, nVal = myN, condCutoff = TRUE)
 ```
 
 ```{r simsem_mispec3,echo=TRUE,message=FALSE,warning=FALSE}
@@ -96,7 +96,7 @@ plotPowerFit(Output.ALT, Output.NULL, alpha = 0.05, logistic = FALSE)
 ```{r simsem_mispec4,echo=TRUE,message=FALSE,warning=FALSE}
 
 cutoff2 <- c(RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)
-round(getPowerFit(Output.ALT, cutoff = cutoff2, nVal = myN, condCutoff = FALSE),2)
+getPowerFit(Output.ALT, cutoff = cutoff2, nVal = myN, condCutoff = FALSE)
 ```
 
 ```{r simsem_mispec5,echo=TRUE,message=FALSE,warning=FALSE}

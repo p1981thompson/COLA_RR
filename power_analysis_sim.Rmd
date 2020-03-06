@@ -16,6 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 library(simsem)
 library(lavaan)
 library(semPlot)
+options(scipen=999)
 
 ```
 
@@ -26,82 +27,116 @@ There are two considerations for power in this registered report: 1. Power to fi
 
 ### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
 
-We can calculate the power to detect the model mispecification using simulation and the distribution of fit indices. We use the `R` package `simsem` [@Jorgensen_2018] to calculate the power for the model comparison. 
+We can calculate the power to detect the model mispecification using simulation and the distribution of fit indices. We use the `R` package `simsem` [@Jorgensen_2018] to calculate the power for the model comparison. We compete nested models, one factor vs two factors, using data simulated from both models. We should find that the data simulated from a two factor model and then fitted to both model, the fit indices favour the more complex two factor model. We simulate multiple data sets and fit the models at each iteration, from this Monte Carlo simulation, we can determine the statistical power to detect the model that explains the data structure most accurately.   
 
 
-```{r simsem_mispec,echo=FALSE,message=FALSE,warning=FALSE}
+```{r simsem_mispec,echo=TRUE,message=FALSE,warning=FALSE, results='hide'}
 #https://github.com/simsem/simsem/wiki/Example-21:-Power-of-Rejecting-Misspecified-Models-with-Varying-Sample-Size
 
-myN<-400
+myN<-650
 #--------------------------------------------------------------#
-#Setup factor loadings matrix
-loading.null <- matrix(0, 6, 2)
-loading.null[1:3, 1] <- NA
-loading.null[4:6, 2] <- NA
 
-#Setup starting values for parameter loadings
-LY.NULL <- bind(loading.null, 0.7)
+#Null model setup 
 
-#Setup correlation matrix between Latent variables
-latent.cor.null <- matrix(NA, 2, 2)
-diag(latent.cor.null) <- 1
+loading.null <- matrix(0, 6, 1)
+loading.null[1:6, 1] <- NA
 
-#Setup starting values for latent variables correlation
-RPS <- binds(latent.cor.null, 0.6)
+LY.null <- bind(loading.null, 0.7)
+RPS.null <- binds(diag(1))
 
 #Setup error structure of the observed (manifest) variables.
 error.cor.mis <- matrix("rnorm(1, 0, 0.1)", 6, 6)
 diag(error.cor.mis) <- 1
 RTE <- binds(diag(6), misspec = error.cor.mis)
 
-
-#Fit null CFA model
-CFA.Model.NULL <- model(LY = LY.NULL, RPS = RPS, RTE = RTE, modelType = "CFA")
+CFA.Model.NULL<- model(LY = LY.null, RPS = RPS.null, RTE = RTE, modelType="CFA")
 
 #--------------------------------------------------------------#
 #--------------------------------------------------------------#
-
 #Alternative model setup - with misspecification
 
-loading.alt <- matrix(0, 6, 1)
-loading.alt[1:6, 1] <- NA
+#Setup factor loadings matrix
+loading.ALT <- matrix(0, 6, 2)
+loading.ALT[1:3, 1] <- NA
+loading.ALT[4:6, 2] <- NA
 
-LY.ALT <- bind(loading.alt, 0.7)
-RPS.ALT <- binds(diag(1))
-CFA.Model.ALT <- model(LY = LY.ALT, RPS = RPS.ALT, RTE = RTE, modelType="CFA")
+#Setup starting values for parameter loadings
+LY.ALT <- bind(loading.ALT, 0.7)
+
+#Setup correlation matrix between Latent variables
+latent.cor.ALT <- matrix(NA, 2, 2)
+diag(latent.cor.ALT) <- 1
+
+#Setup starting values for latent variables correlation
+RPS <- binds(latent.cor.ALT, 0.6)
+
+
+
+
+#Fit null CFA model
+CFA.Model.ALT <- model(LY = LY.ALT, RPS = RPS, RTE = RTE, modelType = "CFA")
 
 #--------------------------------------------------------------#
 #--------------------------------------------------------------#
 
-Output.NULL <- sim(NULL, n = 50:600, CFA.Model.NULL,silent=TRUE)
-Output.ALT <- sim(NULL, n = 50:600, CFA.Model.ALT, generate = CFA.Model.NULL,silent=TRUE)
 
-cutoff <- getCutoff(Output.NULL, alpha = 0.05, nVal = myN)
-plotCutoff(Output.NULL, alpha = 0.05)
+
+Output.nested.nested <- sim(NULL, n = 50:800, CFA.Model.NULL,silent=TRUE)
+Output.nested.parent <- sim(NULL, n = 50:800, CFA.Model.ALT, generate = CFA.Model.NULL,silent=TRUE)
+
+Output.parent.parent <- sim(NULL, n = 50:800, CFA.Model.ALT,silent=TRUE)
+Output.parent.nested <- sim(NULL, n = 50:800, CFA.Model.NULL, generate = CFA.Model.ALT,silent=TRUE)
+
+cutoff <- getCutoffNested(Output.nested.nested,Output.nested.parent, nVal = myN)
 
 ```
+
+### Comparing models based on one factor simulated data (Not our test hypothesis, but for completeness)
+
+```{r model_compare_nested,echo=TRUE,message=FALSE,warning=FALSE}
+
+anova(Output.nested.nested, Output.nested.parent)
+```
+
+### Comparing models based on two factor simulated data (Test hypothesis)
+
+This output shows the power as a proportion (0 = 0%; 1=100%) for various sample sizes. We can see that we have good overall power based on a likelihood ratio test. The likelihood ratio test statistic follows a Chi-squared distribution, so at each iteration of the simulation a p-value is recorded and the proportion of statistically significant results at each sample size id recorded, i.e, statistical power. We can see that we are well powered to detect this difference. 
+
+```{r model_compare_parent,echo=TRUE}
+anova(Output.parent.nested,Output.parent.parent)
+```
+
+### Alternative power calculation using the fit indices.
+
+The same Monte Carlo simulation is used but the power is based on the relative fit indices. For more details, see [https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size](https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size).
 
 ```{r simsem_mispec2,echo=TRUE,message=FALSE,warning=FALSE}
 
-getPowerFit(Output.ALT, nullObject = Output.NULL, alpha = 0.05, nVal = myN)
-getPowerFit(Output.ALT, cutoff = cutoff, nVal = myN, condCutoff = TRUE)
+getPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05, nVal = myN)
+getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff, nVal = myN)
+
 ```
+
+Two power estimates are provided, one derived by a specific sample size and null model, and secondly, using a derived cutoff.
 
 ```{r simsem_mispec3,echo=TRUE,message=FALSE,warning=FALSE}
 
-plotPowerFit(Output.ALT, Output.NULL, alpha = 0.05)
-plotPowerFit(Output.ALT, Output.NULL, alpha = 0.05, logistic = FALSE)
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05)
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05, logistic = FALSE)
 ```
+
+We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices value to ensure a satisfactory model. Here we have specified less conservative cutoffs which are commonly used in the literature [@Wang_2012].
 
 ```{r simsem_mispec4,echo=TRUE,message=FALSE,warning=FALSE}
 
 cutoff2 <- c(RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)
-getPowerFit(Output.ALT, cutoff = cutoff2, nVal = myN, condCutoff = FALSE)
+getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2, nVal = myN)
 ```
 
 ```{r simsem_mispec5,echo=TRUE,message=FALSE,warning=FALSE}
 
-plotPowerFit(Output.ALT, cutoff = cutoff2)
-plotPowerFit(Output.ALT, cutoff = cutoff2, logistic = FALSE)
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2)
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2, logistic = FALSE)
 ```
+
 

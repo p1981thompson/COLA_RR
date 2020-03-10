@@ -4,18 +4,21 @@ author: The COLA Consortium (Dorothy V. M. Bishop, David Carey, Margriet Groen, 
   Hodgson, John Hudson, Emma Karlsson, Mairéad MacSweeney, Adam J. Parker, Nuala Simpson,
   Paul A. Thompson, Kate E. Watkins, Zoe V. J. Woodhead)
 date: "04/03/2020"
-output: html_document
+output: bookdown::word_document2
 bibliography: power.bib
 ---
 
 ```{r Rpackage_setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 library(simsem)
+library(bookdown)
 library(lavaan)
 library(semPlot)
-library(knitr)
-library(kableExtra)
+# library(knitr)
+# library(kableExtra)
 library(tidyverse)
+library(flextable)
+library(officer)
 options(scipen=999)
 
 ```
@@ -44,7 +47,7 @@ There are two considerations for power in this registered report: 1. Power to fi
 We can calculate the power to detect the model mispecification using simulation and the distribution of fit indices. We use the `R` package `simsem` [@Jorgensen_2018] to calculate the power for the model comparison. We compete nested models, one factor vs two factors, using data simulated from both models. We should find that the data simulated from a two factor model and then fitted to both model, the fit indices favour the more complex two factor model. We simulate multiple data sets and fit the models at each iteration, from this Monte Carlo simulation, we can determine the statistical power to detect the model that explains the data structure most accurately.   
 
 
-```{r simsem_mispec,echo=TRUE,message=FALSE,warning=FALSE, results='hide'}
+```{r simsem_mispec,echo=FALSE,message=FALSE,warning=FALSE, results='hide'}
 #https://github.com/simsem/simsem/wiki/Example-21:-Power-of-Rejecting-Misspecified-Models-with-Varying-Sample-Size
 
 myN<-650
@@ -105,49 +108,67 @@ cutoff <- getCutoffNested(Output.nested.nested,Output.nested.parent, nVal = myN)
 
 ```
 
-### Comparing models based on one factor simulated data (Not our test hypothesis, but for completeness)
+<!--### Comparing models based on one factor simulated data (Not our test hypothesis, but for completeness)
 
-```{r model_compare_nested,echo=TRUE,message=FALSE,warning=FALSE}
+```{r model_compare_nested,echo=FALSE,message=FALSE,warning=FALSE}
 anova(Output.nested.nested, Output.nested.parent)
 ```
+-->
 
 ### Comparing models based on two factor simulated data (Test hypothesis)
 
 This output shows the power as a proportion (0 = 0%; 1=100%) for various sample sizes. We can see that we have good overall power based on a likelihood ratio test. The likelihood ratio test statistic follows a Chi-squared distribution, so at each iteration of the simulation a p-value is recorded and the proportion of statistically significant results at each sample size id recorded, i.e, statistical power. We can see that we are well powered to detect this difference. 
 
-```{r model_compare_parent,echo=TRUE}
-anova(Output.parent.nested,Output.parent.parent)
+
+```{r model_compare_parent,echo=FALSE,results='asis'}
+tab.data <- anova(Output.parent.nested,Output.parent.parent)$varyParam
+
+power_LR <- as.data.frame(tab.data)
+
+power_LR %>% `colnames<-`(c("N", "Power")) %>%flextable() %>% set_caption(.,"Statistical power based on likelihood ratio test")
+   
 ```
 
 ### Alternative power calculation using the fit indices.
 
 The same Monte Carlo simulation is used but the power is based on the relative fit indices. For more details, see [https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size](https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size).
 
-```{r simsem_pwr_tab1,echo=TRUE,message=FALSE,warning=FALSE}
+
+```{r simsem_pwr_tab1,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
 
 power1 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05, nVal = myN)
 
 power1 <- as.data.frame(power1)
 colnames(power1)<-c('Power')
 
-kable(power1,caption = "Statistical power based on fit indices (NULL model defined at fixed sample size)")%>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
+power1 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable() %>% set_caption(.,"Statistical power based on fit indices (NULL model defined at fixed sample size)")
+
 ```
 
-```{r simsem_pwr_tab2,echo=TRUE,message=FALSE,warning=FALSE}
+
+Two power estimates are provided, one derived by a specific sample size (Table 1) and null model (Table 2), and secondly, using a derived cutoff. 
+
+
+```{r simsem_pwr_tab2,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
 
 power2 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff, nVal = myN)
 
 power2 <- as.data.frame(power2)
 colnames(power2)<-c("Power")
 
-kable(power2,caption = "Statistical power based on fit indices (derived cutoff)")%>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
+power2 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable()%>% set_caption(.,"Statistical power based on fit indices (derived cutoff)")
 ```
 
-Two power estimates are provided, one derived by a specific sample size and null model, and secondly, using a derived cutoff. It should be noted that the standardized root mean square residual (srmr) is highly sensitive to large sample sizes and will tend to smaller values, hence the odd shape power curve; therefore, we should disregard this index [@Wang_2012].
 
-```{r simsem_mispec3,echo=TRUE,message=FALSE,warning=FALSE,fig.caption = 'Power curves for all fit indices (model derived cutoffs)'}
+
+```{r simsem_mispec3,echo=FALSE,message=FALSE,warning=FALSE,fig.caption = 'Power curves for all fit indices (model derived cutoffs)'}
+knitr::opts_chunk$set(comment = NA)
 jpeg('power_plot1.jpg',quality = 100,width = 580, height = 480, units = "px")
 plotPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05)
 dev.off()
@@ -155,9 +176,11 @@ dev.off()
 knitr::include_graphics('power_plot1.jpg')
 ```
 
-We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices' values to ensure a satisfactory model. Here we have specified less conservative cutoffs which are commonly used in the literature [@Wang_2012].
 
-```{r simsem_mispec4,echo=TRUE,message=FALSE,warning=FALSE}
+We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices' values to ensure a satisfactory model. Here we have specified less conservative cutoffs (RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06) which are commonly used in the literature [@Wang_2012]. It should be noted that the standardized root mean square residual (srmr) is highly sensitive to large sample sizes and will tend to smaller values, hence the odd shape power curve; therefore, we should disregard this index [@Wang_2012].
+
+
+```{r simsem_mispec4,echo=FALSE,message=FALSE,warning=FALSE}
 
 cutoff2 <- c(RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)
 power3 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2, nVal = myN)
@@ -165,13 +188,15 @@ power3 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = 
 power3 <- as.data.frame(power3)
 colnames(power3)<-c("Power")
 
-kable(power3,caption = "Statistical power based on fit indices (derived cutoff)")%>%
-  kable_styling(bootstrap_options = c("striped", "hover"), full_width = F)
+power3 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable() %>% set_caption(.,"Statistical power based on fit indices (derived cutoff;RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)")
 
 ```
 
-```{r simsem_mispec5,echo=TRUE,message=FALSE,warning=FALSE,fig.caption='Power curves for uer defined cutoffs (fit indices: rmsea, cfi, tfi and srmr)'}
-
+```{r simsem_mispec5,echo=FALSE,message=FALSE,warning=FALSE,fig.caption='Power curves for uer defined cutoffs (fit indices: rmsea, cfi, tfi and srmr)'}
+knitr::opts_chunk$set(comment = NA)
 jpeg('power_plot2.jpg',quality = 100,width = 580, height = 480, units = "px")
 plotPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2)
 dev.off()
@@ -182,7 +207,7 @@ knitr::include_graphics('power_plot2.jpg')
 
 ## Prediction 2 and 3
 
-As previously stated, Prediction 2 is contingent on Predicion 1's analysis, so cannot be effectively estimated. 
+As previously stated, Prediction 2 is contingent on Prediction 1's analysis, so cannot be effectively estimated. 
 
 Power estimates for Prediction 3 (fMRI, N=160 conservative estimate). If we look at the estimates from Prediction 1's analysis when N=160, we see that we have adequate power (91%) to test this hypothesis. Again, we should disregard the srmr fit index as it is unreliable at higher sample sizes.
 

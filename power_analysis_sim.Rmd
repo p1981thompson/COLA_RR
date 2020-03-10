@@ -36,7 +36,7 @@ We document the power estimates for Prediction 1 in section 2. Prediction 2 will
 
 ## Prediction 1
 
-There are two considerations for power in this registered report: 1. Power to fit individual models with sufficient fit inidices, whether one factor or two factor; 2. Power to detect mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
+There are two considerations for power in this registered report: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
 
 
 ### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
@@ -153,7 +153,7 @@ plotPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.
 
 ```
 
-We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices value to ensure a satisfactory model. Here we have specified less conservative cutoffs which are commonly used in the literature [@Wang_2012].
+We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices' values to ensure a satisfactory model. Here we have specified less conservative cutoffs which are commonly used in the literature [@Wang_2012].
 
 ```{r simsem_mispec4,echo=TRUE,message=FALSE,warning=FALSE}
 

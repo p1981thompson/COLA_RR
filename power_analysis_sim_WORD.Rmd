@@ -39,7 +39,7 @@ We document the power estimates for Prediction 1 in section 2. Prediction 2 will
 
 ## Single group confirmatory factor analysis models (one vs two factor)
 
-There are two considerations for power in this registered report: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
+There are two considerations for power in this part: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
 
 
 ### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
@@ -207,7 +207,9 @@ knitr::include_graphics('power_plot2.jpg')
 
 ## Multigroup model (two factor multigroup CFA - left and right handers groups)
 
-The second power calculation is based on a two factor multigroup model. We hypothesis that the left handers group will have a different size correlation between the two factor than the right handers group (0.5 and 0.8 respectively). Data is simulated based on the proposed correlation structure, and then two multigroup models are fitted to the data, unconstrained model allowing for different latent variable correlation ineach group and a second model, that constrains the latent variable correlation to be the same. We then perform a likelihood ratio test on each model to determine which provides a better explanation of the data. The power is established by running the simulation and model fitting over 1000 iterations. The p value from the likelihood ratio test for each iteration is recorded and the proportion of these runs that are significant at alpha level of 5% is the statistical power.   
+The second power calculation is based on a two factor multigroup model. We hypothesis that the left handers group will have a different size correlation between the two factor than the right handers group (0.5 and 0.8 respectively). Data is simulated based on the proposed correlation structure, and then two multigroup models are fitted to the data, unconstrained model allowing for different latent variable correlation in each group and a second model, that constrains the latent variable correlation to be the same. We then perform a likelihood ratio test on each model to determine which provides a better explanation of the data. The power is established by running the simulation and model fitting over 1000 iterations. The p value from the likelihood ratio test for each iteration is recorded and the proportion of these runs that are significant at alpha level of 5% is the statistical power. 
+
+Current power estimate for the proposed sample size and ratio of left and right handers (N left = 160, N right = 490) would be around 68%. If groups were balanced but overall sample size remained the same, power is increassed to 80%. To satisfy registered report power of 90%, we would require 450 individuals per group.
 
 ```{r multigroup_pwr,echo=FALSE,message=FALSE,warning=FALSE}
 require(lavaan)

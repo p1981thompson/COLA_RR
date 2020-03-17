@@ -37,7 +37,7 @@ We document the power estimates for Prediction 1 in section 2. Prediction 2 will
 
 # Power estimate 
 
-## Prediction 1
+## Single group confirmatory factor analysis models (one vs two factor)
 
 There are two considerations for power in this registered report: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
 
@@ -205,11 +205,62 @@ knitr::include_graphics('power_plot2.jpg')
 
 ```
 
-## Prediction 2 and 3
+## Multigroup model (two factor multigroup CFA - left and right handers groups)
 
-As previously stated, Prediction 2 is contingent on Prediction 1's analysis, so cannot be effectively estimated. 
+The second power calculation is based on a two factor multigroup model. We hypothesis that the left handers group will have a different size correlation between the two factor than the right handers group (0.5 and 0.8 respectively). Data is simulated based on the proposed correlation structure, and then two multigroup models are fitted to the data, unconstrained model allowing for different latent variable correlation ineach group and a second model, that constrains the latent variable correlation to be the same. We then perform a likelihood ratio test on each model to determine which provides a better explanation of the data. The power is established by running the simulation and model fitting over 1000 iterations. The p value from the likelihood ratio test for each iteration is recorded and the proportion of these runs that are significant at alpha level of 5% is the statistical power.   
 
-Power estimates for Prediction 3 (fMRI, N=160 conservative estimate). If we look at the estimates from Prediction 1's analysis when N=160, we see that we have adequate power (91%) to test this hypothesis. Again, we should disregard the srmr fit index as it is unreliable at higher sample sizes.
+```{r multigroup_pwr,echo=FALSE,message=FALSE,warning=FALSE}
+require(lavaan)
+
+cfa_popmodel<-'
+f1 =~ 0.7 * x1 + 0.7 * x2 + 0.7 * x3 
+f2 =~ 0.7 * x4 + 0.7 * x5 + 0.7 * x6 
+f1~~ 1 * f1           # variance of f1 is 1
+f2~~ 1 * f2           # variance of f2 is 1
+f1~~c(0.5,0.8)*f2
+' 
+
+cfa_model<-'
+f1 =~ x1 + x2 + x3 
+f2 =~ x4 + x5 + x6 
+f1~~f2
+f1~~1*f1
+' 
+powerfun<-function(Niter=1000,N.group1=325L,N.group2=325L)
+{
+probs<-ind<-vector(mode='numeric',length=Niter)
+for(i in 1:Niter)
+{
+
+simdata<-simulateData(model=cfa_popmodel, sample.nobs = c(N.group1,N.group2),model.type = "cfa", group.label = c("LEFT","RIGHT"))  
+#summary(simdata)
+cfa_null <- cfa(cfa_model, 
+                  data = simdata, 
+                  group = "group",
+                group.equal =c("means", "intercepts",'lv.covariances','lv.variances'))
+  
+  
+cfa_alt <- cfa(cfa_model, 
+                     data = simdata, 
+                     group = "group",
+               group.equal =c("means", "intercepts",'lv.variances'))
+
+res<-anova(cfa_null,cfa_alt)
+probs[i]<-res$`Pr(>Chisq)`[[2]]
+ind[i]<-ifelse(probs[i]>0.05,0,1)
+}
+power<-mean(ind)
+return(power)
+}
+
+powertab<-data.frame(N1=c(160,200,325,450),N2=c(490,450,325,450),power=rep(NA,4))
+for(j in 1:4)
+{
+powertab[j,3]<-powerfun(1000,powertab[j,1],powertab[j,2])
+}
+
+powertab %>% flextable() %>% set_caption(.,"Statistical power based on likelihood ratio tests (multigroup)")
+```
 
 # References
 

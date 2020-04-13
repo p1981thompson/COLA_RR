@@ -21,6 +21,8 @@ library(flextable)
 library(officer)
 options(scipen=999)
 
+#Version including simulation based on empirical covariance/means from A2
+
 ```
 
 # Predictions

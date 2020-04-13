@@ -1,0 +1,299 @@
+---
+title: 'COLA Registered Report: The brain basis of inconsistent language lateralisation (POWER ANALYSIS)'
+author: The COLA Consortium (Dorothy V. M. Bishop, David Carey, Margriet Groen, Jessica
+  Hodgson, John Hudson, Emma Karlsson, Mairéad MacSweeney, Adam J. Parker, Nuala Simpson,
+  Paul A. Thompson, Kate E. Watkins, Zoe V. J. Woodhead)
+date: "04/03/2020"
+output: bookdown::word_document2
+bibliography: power.bib
+---
+
+```{r Rpackage_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(simsem) 
+library(bookdown)
+library(lavaan)
+library(semPlot)
+# library(knitr)
+# library(kableExtra)
+library(tidyverse)
+library(flextable)
+library(officer)
+options(scipen=999)
+
+```
+
+# Predictions
+
+There are three main predictions:
+
+1. Using a modified test battery with two new tasks we will replicate our previous finding that covariance between tasks is best explained by a two-factor solution. To test this prediction, we will use an approach based on Woodhead et al (2019), but instead of having paths from all variables to both factors, we will pre-specify a two-factor model with paths from A, B and C to Factor 1, and from D, E and F to Factor 2. [add OSF link to script]
+ 
+2. The two factors will be significantly correlated. Individuals who are bivariate outliers, as defined by Cook's distance (i.e. with dissociation between scores on the two factors) will predominantly be left-handed.
+ 
+3. With fMRI we predict that tasks loading on the first factor will generate frontal activity, and those loading on the second factor will show stronger posterior activation.
+
+We document the power estimates for Prediction 1 in section 2. Prediction 2 will be contingent on the output of the analysis for prediction 1, so power cannot be accurately assessed. It should be noted that the substantial sample size proposed for the first prediction is highly likely to enable prediction 2 to be well powered. Finally, prediction 3 can use the power estimate from prediction 1 as the analysis, the only substantive change is that the measured outcomes are derived from fMRI rather than fTCD. The number of participants having measurements in fMRI is capped for pragmatic reasons at 160-200 individuals, so we will assess the power at this level.  
+
+# Power estimate 
+
+## Single group confirmatory factor analysis models (one vs two factor)
+
+There are two considerations for power in this part: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
+
+
+### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
+
+We can calculate the power to detect the model mispecification using simulation and the distribution of fit indices. We use the `R` package `simsem` [@Jorgensen_2018] to calculate the power for the model comparison. We compare nested models, one factor vs two factors, using data simulated from both models. We should find that for data simulated from a two factor model and then fitted to both models, the fit indices favour the more complex two factor model. We simulate multiple data sets and fit the models at each iteration; from this Monte Carlo simulation, we can determine the statistical power to detect the model that explains the data structure most accurately.   
+
+
+```{r simsem_mispec,echo=FALSE,message=FALSE,warning=FALSE, results='hide'}
+#https://github.com/simsem/simsem/wiki/Example-21:-Power-of-Rejecting-Misspecified-Models-with-Varying-Sample-Size
+
+myN<-650
+#--------------------------------------------------------------#
+
+#Null model setup 
+
+loading.null <- matrix(0, 6, 1)
+loading.null[1:6, 1] <- NA #creates matrix, 6 rows, 1 column, all values NA
+
+LY.null <- bind(loading.null, 0.7)
+RPS.null <- binds(diag(1))
+
+#Setup error structure of the observed (manifest) variables.
+error.cor.mis <- matrix("rnorm(1, 0, 0.1)", 6, 6)
+diag(error.cor.mis) <- 1
+RTE <- binds(diag(6), misspec = error.cor.mis)
+
+CFA.Model.NULL<- model(LY = LY.null, RPS = RPS.null, RTE = RTE, modelType="CFA")
+
+#--------------------------------------------------------------#
+#--------------------------------------------------------------#
+#Alternative model setup - with misspecification
+
+#Setup factor loadings matrix
+loading.ALT <- matrix(0, 6, 2)
+loading.ALT[1:3, 1] <- NA
+loading.ALT[4:6, 2] <- NA
+
+#Setup starting values for parameter loadings
+LY.ALT <- bind(loading.ALT, 0.7)
+
+#Setup correlation matrix between Latent variables
+latent.cor.ALT <- matrix(NA, 2, 2)
+diag(latent.cor.ALT) <- 1
+
+#Setup starting values for latent variables correlation
+RPS <- binds(latent.cor.ALT, 0.6)
+
+
+
+
+#Fit null CFA model
+CFA.Model.ALT <- model(LY = LY.ALT, RPS = RPS, RTE = RTE, modelType = "CFA")
+
+#--------------------------------------------------------------#
+#--------------------------------------------------------------#
+
+
+
+Output.nested.nested <- sim(NULL, n = 50:800, CFA.Model.NULL,silent=TRUE)
+Output.nested.parent <- sim(NULL, n = 50:800, CFA.Model.ALT, generate = CFA.Model.NULL,silent=TRUE)
+
+Output.parent.parent <- sim(NULL, n = 50:800, CFA.Model.ALT,silent=TRUE)
+Output.parent.nested <- sim(NULL, n = 50:800, CFA.Model.NULL, generate = CFA.Model.ALT,silent=TRUE)
+
+cutoff <- getCutoffNested(Output.nested.nested,Output.nested.parent, nVal = myN)
+
+```
+
+<!--### Comparing models based on one factor simulated data (Not our test hypothesis, but for completeness)
+
+```{r model_compare_nested,echo=FALSE,message=FALSE,warning=FALSE}
+anova(Output.nested.nested, Output.nested.parent)
+```
+-->
+
+### Comparing models based on two factor simulated data (Test hypothesis)
+
+This output shows the power as a proportion (0 = 0%; 1=100%) for various sample sizes. We can see that we have good overall power based on a likelihood ratio test. The likelihood ratio test statistic follows a Chi-squared distribution, so at each iteration of the simulation a p-value is recorded and the proportion of statistically significant results at each sample size id recorded, i.e, statistical power. We can see that we are well powered to detect this difference. 
+
+
+```{r model_compare_parent,echo=FALSE,results='asis'}
+tab.data <- anova(Output.parent.nested,Output.parent.parent)$varyParam
+
+power_LR <- as.data.frame(tab.data)
+
+power_LR %>% `colnames<-`(c("N", "Power")) %>%flextable() %>% set_caption(.,"Statistical power based on likelihood ratio test")
+   
+```
+
+### Alternative power calculation using the fit indices.
+
+The same Monte Carlo simulation is used but the power is based on the relative fit indices. For more details, see [https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size](https://github.com/simsem/simsem/wiki/Example-25:-Nested-Model-Comparison-with-Varying-Sample-Size).
+
+
+```{r simsem_pwr_tab1,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+
+power1 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05, nVal = myN)
+
+power1 <- as.data.frame(power1)
+colnames(power1)<-c('Power')
+
+power1 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable() %>% set_caption(.,"Statistical power based on fit indices (NULL model defined at fixed sample size)")
+
+```
+
+
+Two power estimates are provided, one derived by a specific sample size (Table 1) and null model (Table 2), and secondly, using a derived cutoff. 
+
+
+```{r simsem_pwr_tab2,echo=FALSE,message=FALSE,warning=FALSE,results='asis'}
+
+power2 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff, nVal = myN)
+
+power2 <- as.data.frame(power2)
+colnames(power2)<-c("Power")
+
+power2 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable()%>% set_caption(.,"Statistical power based on fit indices (derived cutoff)")
+```
+
+
+
+```{r simsem_mispec3,echo=FALSE,message=FALSE,warning=FALSE,fig.caption = 'Power curves for all fit indices (model derived cutoffs)'}
+knitr::opts_chunk$set(comment = NA)
+jpeg('power_plot1.jpg',quality = 100,width = 580, height = 480, units = "px")
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, nullNested=Output.nested.nested, nullParent=Output.nested.parent, alpha = 0.05)
+dev.off()
+
+knitr::include_graphics('power_plot1.jpg')
+```
+
+
+We can also specify a user defined cutoff, for example, guidelines on minimum required fit indices' values to ensure a satisfactory model. Here we have specified less conservative cutoffs (RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06) which are commonly used in the literature [@Wang_2012]. It should be noted that the standardized root mean square residual (srmr) is highly sensitive to large sample sizes and will tend to smaller values, hence the odd shape power curve; therefore, we should disregard this index [@Wang_2012].
+
+
+```{r simsem_mispec4,echo=FALSE,message=FALSE,warning=FALSE}
+
+cutoff2 <- c(RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)
+power3 <- getPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2, nVal = myN)
+
+power3 <- as.data.frame(power3)
+colnames(power3)<-c("Power")
+
+power3 %>%
+    add_rownames() %>% 
+  `colnames<-`(c("Fit Index", "Power")) %>%
+    flextable() %>% set_caption(.,"Statistical power based on fit indices (derived cutoff;RMSEA = 0.05, CFI = 0.95, TLI = 0.95, SRMR = 0.06)")
+
+```
+
+```{r simsem_mispec5,echo=FALSE,message=FALSE,warning=FALSE,fig.caption='Power curves for uer defined cutoffs (fit indices: rmsea, cfi, tfi and srmr)'}
+knitr::opts_chunk$set(comment = NA)
+jpeg('power_plot2.jpg',quality = 100,width = 580, height = 480, units = "px")
+plotPowerFitNested(Output.parent.nested,Output.parent.parent, cutoff = cutoff2)
+dev.off()
+
+knitr::include_graphics('power_plot2.jpg')
+
+```
+
+## Multigroup model (two factor multigroup CFA - left and right handers groups)
+
+The second power calculation is based on a two factor multigroup model. We hypothesis that the left handers group will have a different size correlation between the two factor than the right handers group (0.5 and 0.8 respectively). Data is simulated based on the proposed correlation structure, and then two multigroup models are fitted to the data, unconstrained model allowing for different latent variable correlation in each group and a second model, that constrains the latent variable correlation to be the same. We then perform a likelihood ratio test on each model to determine which provides a better explanation of the data. The power is established by running the simulation and model fitting over 1000 iterations. The p value from the likelihood ratio test for each iteration is recorded and the proportion of these runs that are significant at alpha level of 5% is the statistical power. 
+
+Current power estimate for the proposed sample size and ratio of left and right handers (N left = 160, N right = 490) would be around 68%. If groups were balanced but overall sample size remained the same, power is increased to 80%. To satisfy registered report power of 90%, we would require 450 individuals per group.
+
+```{r multigroup_pwr,echo=FALSE,message=FALSE,warning=FALSE}
+require(lavaan)
+require(MASS)
+
+#base predictions on observed data from study A2
+myA2 <- read.csv('https://osf.io/fr5na/download') #read from OSF stored file
+
+#simulate correlation matrix by taking PhonDec1,SentGen1 and mean PhonDec2/SentGen2
+#vs SentComp1,Jabber1,and mean SentComp2/Jabber2
+myA2$F1mean <- (myA2$PhonDec2+myA2$SentGen2)/2
+myA2$F2mean <- (myA2$SentGen2+myA2$Jabber2)/2
+corrcolumns <- c(3,5,33,6,7,34)
+covL <- as.matrix(cov(myA2[myA2$handedness=='L',corrcolumns],use='complete.obs'))
+covR <- as.matrix(cov(myA2[myA2$handedness=='R',corrcolumns],use='complete.obs'))
+meanL <- colMeans(myA2[myA2$handedness=='L',corrcolumns],na.rm=T)
+meanR <- colMeans(myA2[myA2$handedness=='R',corrcolumns],na.rm=T)
+
+#Population model used to simulate data
+# This has different correlations between f1 and f2 for the two groups,
+# for group 1 correlation is .5 and for group 2 it is .8
+cfa_popmodel<-'
+f1 =~ 0.7 * x1 + 0.7 * x2 + 0.7 * x3 
+f2 =~ 0.7 * x4 + 0.7 * x5 + 0.7 * x6 
+f1~~ 1 * f1           # variance of f1 is 1
+f2~~ 1 * f2           # variance of f2 is 1
+f1~~c(0.5,0.8)*f2
+' 
+
+cfa_model<-'
+f1 =~ x1 + x2 + x3 
+f2 =~ x4 + x5 + x6 
+f1~~f2
+f1~~1*f1
+' 
+Niter <- 1000 #use 1000 for final run, but lower to test
+
+
+#####################################################################
+powertab<-data.frame(N1=c(150,200,225),N2=c(300,350,225),power=rep(NA,3))
+for(j in 1:3){
+probs<-ind<-vector(mode='numeric',length=Niter)
+for(i in 1:Niter){
+  print(paste0('i = ',i))
+  N.group1<-powertab[j,1]
+N.group2<-powertab[j,2]
+  #Simulate data for cfa_popmodel - i.e. differences between groups
+#simdata<-simulateData(model=cfa_popmodel, sample.nobs = c(N.group1,N.group2),model.type = "cfa", group.label = c("LEFT","RIGHT"))  
+
+simdataL <- data.frame(mvrnorm(N.group1,meanL,covL))
+simdataR <- data.frame(mvrnorm(N.group2,meanR,covR))
+simdataL$group<-1
+simdataR$group<-2
+simdata.empirical <- data.frame(rbind(simdataL,simdataR))
+colnames(simdata.empirical)<- c('x1','x2','x3','x4','x5','x6','group')
+
+
+cfa_null <- cfa(cfa_model, 
+                  data = simdata.empirical, 
+                  group = "group",
+                group.equal =c("means", "intercepts",'lv.covariances','lv.variances'))
+  
+cfa_alt <- cfa(cfa_model, 
+                     data = simdata.empirical, 
+                     group = "group",
+               group.equal =c("means" ,"intercepts",'lv.variances'))
+
+res<-anova(cfa_null,cfa_alt)
+probs[i]<-res$`Pr(>Chisq)`[[2]]
+ind[i]<-ifelse(probs[i]>0.05,0,1) #1 indicates models differ significantly
+}
+powertab[j,3] <- power<-mean(ind)
+
+}
+
+powertab %>% flextable() %>% set_caption(.,"Statistical power based on likelihood ratio tests (multigroup)")
+
+#with 1000 runs and empirical simulated data we get
+#   N1  N2 power
+#1 150 300 0.772
+#2 200 350 0.845
+#3 225 225 0.798
+```
+
+# References
+
+

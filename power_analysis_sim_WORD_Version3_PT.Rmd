@@ -1,0 +1,216 @@
+---
+title: 'COLA Registered Report: The brain basis of inconsistent language lateralisation (POWER ANALYSIS - Version 3)'
+author: The COLA Consortium (Dorothy V. M. Bishop, David Carey, Margriet Groen, Jessica
+  Hodgson, John Hudson, Emma Karlsson, Mairéad MacSweeney, Adam J. Parker, Nuala Simpson,
+  Paul A. Thompson, Kate E. Watkins, Zoe V. J. Woodhead)
+date: "28/05/2020"
+output: bookdown::word_document2
+bibliography: power.bib
+---
+
+```{r Rpackage_setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(semPower)
+library(bookdown)
+library(lavaan)
+library(semPlot)
+# library(knitr)
+# library(kableExtra)
+library(tidyverse)
+library(flextable)
+library(officer)
+options(scipen=999)
+
+```
+
+# Predictions
+
+There are three main predictions:
+
+1. Using a modified test battery with two new tasks we will replicate our previous finding that covariance between tasks is best explained by a two-factor solution. To test this prediction, we will use an approach based on @Woodhead_2019, but instead of having paths from all variables to both factors, we will pre-specify a two-factor model with paths from A, B and C to Factor 1, and from D, E and F to Factor 2. [add OSF link to script]
+ 
+2. The two factors will be significantly correlated. Individuals who are bivariate outliers, as defined by Cook's distance (i.e. with dissociation between scores on the two factors) will predominantly be left-handed.
+ 
+3. With fMRI we predict that tasks loading on the first factor will generate frontal activity, and those loading on the second factor will show stronger posterior activation.
+
+We document the power estimates for Prediction 1 in section 2. Prediction 2 will be contingent on the output of the analysis for prediction 1, so power cannot be accurately assessed. It should be noted that the substantial sample size proposed for the first prediction is highly likely to enable prediction 2 to be well powered. Finally, prediction 3 can use the power estimate from prediction 1 as the analysis, the only substantive change is that the measured outcomes are derived from fMRI rather than fTCD. The number of participants having measurements in fMRI is capped for pragmatic reasons at 160-200 individuals, so we will assess the power at this level.  
+
+# Power estimate 
+
+## Single group confirmatory factor analysis models (one vs two factor)
+
+There are two considerations for power in this part: 1. Power to fit individual models with sufficient fit indices, whether one factor or two factor; 2. Power to detect the mispecified model (one factor) vs the 'true' model (two factor). The first power consideration can be shown to be satisfied by our proposed sample size by following Monte Carlo simulation results presented by @Wolf_2013. This paper presents results from a range of simple CFA models, varying numbers of factors, numbers of measured variables, and magnitudes of factor loadings.
+
+
+### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
+
+We can calculate the power to detect the model mispecification using simulation and the distribution of fit indices. We use the `R` package `semPower` [@Moshagen_2016; @Moshagen_2020] to calculate the power for the model comparison. We compete nested models, one factor vs two factors, using data simulated from both models. We should find that the data simulated from a two factor model and then fitted to both model, the fit indices favour the more complex two factor model. We simulate multiple data sets and fit the models at each iteration, from this Monte Carlo simulation, we can determine the statistical power to detect the model that explains the data structure most accurately.   
+
+
+```{r sem_mispec,echo=FALSE,message=FALSE,warning=FALSE, results='hide'}
+#https://cran.r-project.org/web/packages/semPower/vignettes/semPower.pdf
+
+
+#population model setup
+
+
+
+#base predictions on observed data from study A2
+myA2 <- read.csv('https://osf.io/fr5na/download') #read from OSF stored file
+
+#simulate correlation matrix by taking PhonDec1,SentGen1 and mean PhonDec2/SentGen2
+#vs SentComp1,Jabber1,and mean SentComp2/Jabber2
+myA2$F1mean <- (myA2$PhonDec2+myA2$SentGen2)/2
+myA2$F2mean <- (myA2$SentGen2+myA2$Jabber2)/2
+corrcolumns <- c(3,5,33,6,7,34)
+# covL <- as.matrix(cov(myA2[myA2$handedness=='L',corrcolumns],use='complete.obs'))
+# covR <- as.matrix(cov(myA2[myA2$handedness=='R',corrcolumns],use='complete.obs'))
+# meanL <- colMeans(myA2[myA2$handedness=='L',corrcolumns],na.rm=T)
+# meanR <- colMeans(myA2[myA2$handedness=='R',corrcolumns],na.rm=T)
+
+my_A2<-na.omit(myA2[,c(3,5,33,6,7,34)])
+colnames(my_A2)<- c('x1','x2','x3','x4','x5','x6')
+
+
+cfa_popmodel<-'
+f1 =~ 0.66* x1 + 0.8 * x2 + 0.98 * x3 
+f2 =~ 0.7* x4 + 0.69 * x5 + 0.9 * x6 
+f1~~ 1 * f1           # variance of f1 is 1
+f2~~ 1 * f2           # variance of f2 is 1
+f1~~0.89*f2
+' 
+
+
+cfa_model<-'
+f1 =~ x1 + x2 + x3 
+f2 =~ x4 + x5 + x6 
+f1~~f2
+f1~~1*f1
+' 
+
+ # population covariance matrix
+
+#cov.pop<-cov(simdata.empirical[,-7])
+cov.pop<-fitted(cfa(cfa_model,data=my_A2))$cov
+#cov.pop <- fitted(sem(cfa_popmodel))$cov
+
+cfa_model_H0<-'
+f1 =~ x1 + x2 + x3 
+f2 =~ x4 + x5 + x6 
+f1~~1*f2 #constrain to correlation=1, therefore one factor model essentially.
+f1~~1*f1
+' 
+
+fit.h1 <- cfa(cfa_model, sample.cov = cov.pop, sample.nobs = 1000, likelihood='wishart')
+
+# fit analysis model to population data
+fit.h0 <- cfa(cfa_model_H0, sample.cov = cov.pop, sample.nobs = 1000, likelihood='wishart')
+#####################################################################
+
+cov.h0 <- fitted(fit.h0)$cov
+df <- fit.h0@test[[1]]$df
+# perform power analysis
+ap5 <- semPower.aPriori(SigmaHat = cov.h0, Sigma = cov.pop, alpha = .05, power = .90, df = df)
+#mytab<-summary(ap5)
+semPower:::semPower.showPlot(chiCrit = ap5$chiCrit, ncp = ap5$impliedNCP, 
+        df = ap5$df)
+```
+
+
+```{r firstpower,echo=F}
+
+mytab<-semPower:::getFormattedResults("a-priori", ap5)
+
+mytab %>% flextable(col_keys = c("V1", "V2")) %>% set_caption(.,"semPower: A-priori power analysis") %>% autofit()
+```
+
+
+## Multigroup model (two factor multigroup CFA - left and right handers groups)
+
+The second power calculation is based on a two factor multigroup model. We hypothesis that the left handers group will have a different size correlation between the two factor than the right handers group. Data is simulated based on the correlation structure from an smaller existing data set reporting a similiar study question [@Woodhead_2019]. We fit two multigroup models to the simulated data; an unconstrained model allowing for different latent variable correlation in each group, and a second model that constrains the latent variable correlation to be equal in both groups. To determine which model provides a better explanation of the data, we use a likelihood ratio test. The statistical power is established by generating 1000 simulated data sets with the same properties and fitting both models to each data set. The p value from the likelihood ratio test for each iteration is recorded and the proportion of these runs that are significant at alpha level of 5% is the statistical power. 
+
+Current power estimate for the proposed sample size and ratio of left and right handers (N left = 160, N right = 490) would be around 85%. To satisfy registered report power of 90%, we would require N left = 230 and N right = 375 individuals.
+
+```{r multigroup_pwr,echo=FALSE,message=FALSE,warning=FALSE}
+require(lavaan)
+require(MASS)
+
+#base predictions on observed data from study A2
+myA2 <- read.csv('https://osf.io/fr5na/download') #read from OSF stored file
+
+#simulate correlation matrix by taking PhonDec1,SentGen1 and mean PhonDec2/SentGen2
+#vs SentComp1,Jabber1,and mean SentComp2/Jabber2
+myA2$F1mean <- (myA2$PhonDec2+myA2$SentGen2)/2
+myA2$F2mean <- (myA2$SentGen2+myA2$Jabber2)/2
+corrcolumns <- c(3,5,33,6,7,34)
+covL <- as.matrix(cov(myA2[myA2$handedness=='L',corrcolumns],use='complete.obs'))
+covR <- as.matrix(cov(myA2[myA2$handedness=='R',corrcolumns],use='complete.obs'))
+meanL <- colMeans(myA2[myA2$handedness=='L',corrcolumns],na.rm=T)
+meanR <- colMeans(myA2[myA2$handedness=='R',corrcolumns],na.rm=T)
+
+
+cfa_model<-'
+f1 =~ x1 + x2 + x3 
+f2 =~ x4 + x5 + x6 
+f1~~f2
+f1~~1*f1
+' 
+Niter <- 1000 #use 1000 for final run, but lower to test
+
+
+#####################################################################
+
+powertab<-data.frame(N1=c(150,200,225,160,230),N2=c(300,350,225,450,375),power=rep(NA,5))
+
+for(j in 1:5){
+probs<-ind<-vector(mode='numeric',length=Niter)
+for(i in 1:Niter){
+  #print(paste0('i = ',i))
+  N.group1<-powertab[j,1]
+N.group2<-powertab[j,2]
+
+  #Simulate data for cfa_popmodel - i.e. differences between groups
+#simdata<-simulateData(model=cfa_popmodel, sample.nobs = c(N.group1,N.group2),model.type = "cfa", group.label = c("LEFT","RIGHT"))  
+
+simdataL <- data.frame(mvrnorm(N.group1,meanL,covL))
+simdataR <- data.frame(mvrnorm(N.group2,meanR,covR))
+simdataL$group<-1
+simdataR$group<-2
+simdata.empirical <- data.frame(rbind(simdataL,simdataR))
+colnames(simdata.empirical)<- c('x1','x2','x3','x4','x5','x6','group')
+
+
+cfa_null <- cfa(cfa_model, 
+                  data = simdata.empirical, 
+                  group = "group",
+                group.equal =c('means','intercepts','lv.covariances','lv.variances'))
+  
+cfa_alt <- cfa(cfa_model, 
+                     data = simdata.empirical, 
+                     group = "group",
+               group.equal =c('means','intercepts','lv.variances'))
+
+res<-anova(cfa_null,cfa_alt)
+probs[i]<-res$`Pr(>Chisq)`[[2]]
+ind[i]<-ifelse(probs[i]>0.05,0,1) #1 indicates models differ significantly
+}
+powertab[j,3] <- power<-mean(ind)
+
+}
+
+powertab %>% flextable() %>% set_caption(.,"Statistical power based on likelihood ratio tests (multigroup)")
+
+#with 1000 runs and empirical simulated data we get
+#   N1  N2 power
+#1 150 300 0.777
+#2 200 350 0.867
+#3 225 225 0.783
+#4 160 450 0.833
+#5 250 400 0.903
+```
+
+
+
+# References
+
+

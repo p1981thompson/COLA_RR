@@ -1,0 +1,671 @@
+---
+title: 'COLA Registered Report: Sample size justification'
+date: "10th August 2020"
+output:
+  html_document:
+    df_print: paged
+bibliography: power.bib
+---
+
+```{r Rpackage_setup, include=FALSE}
+#need to install semPower from github on first run
+knitr::opts_chunk$set(echo = TRUE)
+library("devtools")
+#install_github("moshagen/semPower") #use github version rather than CRAN
+library(semPower)
+library(bookdown)
+library(lavaan)
+library(semPlot)
+library(tidyverse)
+library(flextable)
+library(officer)
+library(corrr) #easy correlations
+library(pwr) #power analysis for common stats tests
+library(MASS) #multivariate normal simulation
+library(qpcR) #used in Kievit script
+options(scipen=999)
+```
+<!---started by DVMB 10th August 2020 when new RR document created on Google docs.
+NB output and bibliography statements from Paul--->
+# Registered report: Inconsistent language lateralisation: evidence from behaviour and lateralised cerebral blood flow
+
+## The COLA Consortium*
+
+*Dorothy V. M. Bishop^1^, David Carey^2^, Margriet A. Groen^3^, Eva Gutierrez-Sigut^4,7^, Jessica Hodgson^5^, John Hudson^6^, Emma Karlsson^2^, Mairéad MacSweeney^7^, Heather Payne^7, Nuala Simpson^1^, Paul A. Thompson^1^, Kate E. Watkins^1^, Ciara Egan^1,2^, Jack H. Grant^1,6^, Sophie Harte^1,7^, Brad Hudson^1,3^, Adam J. Parker^1^, Zoe V. J. Woodhead^1^.
+
+^1^Department of Experimental Psychology, University of Oxford  
+^2^School of Psychology, Bangor University  
+^3^Department of Psychology, Lancaster University  
+^4^Department of Psychology, University of Essex  
+^5^Lincoln Medical School, University of Lincoln  
+^6^School of Psychology, University of Lincoln  
+^7^Deafness, Cognition and Language Research Centre, University College London  
+
+
+
+## Abstract
+Most people have strong left-brain lateralisation for language, with a minority showing right- or bilateral language representation. On some receptive language tasks, however, lateralisation appears to be reduced or absent. This raises the question of whether and how language laterality may fractionate within individuals. Our primary hypothesis builds on prior work and postulates that there can be dissociations in lateralisation of different language functions, especially in left-handers, who may have different aspects of language function mediated by opposite hemispheres.  A subsidiary hypothesis is that laterality indices will cluster according to how far they involve generation of words or sentences, vs receptive language. We plan to test these predictions in two stages: a) Study of 1000 individuals (300 non-right-handers) using an online battery of laterality tasks; b) In 200 of these individuals (120 left-handed), assessment of laterality for six language tasks using functional transcranial Doppler ultrasound (fTCD). As well as providing data to test our main hypothesis, the project will generate an open dataset for studies of individual differences in language lateralisation, making it possible to study the functional consequences of atypical lateralisation, and help develop optimal methods for assessing language lateralisation in clinical contexts.
+
+<!--- See Registered Report_COLA20200808, on OneDrive/Oscci mss 2016-/ongoing/COLA RR for main intro. This corresponds to Google docs manuscripts and will change, so for now we just focus on Hypotheses/Predictions so that we can simulate a dataset for analysis and do power analysis --->
+
+## Hypotheses
+
+Hypotheses
+
+The overarching hypothesis is that there are dissociations in lateralisation of different language functions, especially in left-handers.  A subsidiary hypothesis is that laterality indices from tasks that primarily implicate language generation and receptive language will form separate clusters.
+
+### Predictions
+
+_Online measures_  
+1. On the online battery, dichotic and visual-half-field tasks will show significant left-brain lateralisation at the group level, with this effect being stronger in right- than left-handers.  
+2. The pattern of correlation between laterality indices from online measures will reflect the extent to which they involve implicit speech production, rather than whether they involve spoken or written language. Thus we anticipate dissociation between the rhyme judgement task and the other two measures, which is not accountable for in terms of low reliability of measures. 
+_FTCD measures_  
+3. The data will fit a model where 'language generation' tasks cluster together on one factor, and 'receptive' language tasks on a second factor.  The factors will be correlated, but the fit of a 2-factor model will be superior to a single-factor model.  
+4. The pattern of covariances will differ for right-handers and left-handers, with better model fit being obtained when separate 2-factor models are estimated for left- vs right-handers. In particular, we predict a lower correlation between the two factors in left-handers vs. right-handers.
+5. On categorical analysis, individuals who depart from left-brained laterality on one or more tasks will be more likely to be left-handed than those who are consistently left-lateralised.  
+_Relationship between fTCD and behavioural laterality indices_  
+6. The laterality profile obtained with the online language battery will be significantly associated with the profile seen with direct measure of cerebral blood flow using fTCD, with laterality on dichotic listening relating more strongly to receptive language tasks, and visual-half-field language measures to language generation tasks.   
+
+# Sample size justification
+
+The sample size is determined not solely by statistical power, though we aim for 90% power for key analyses. We formed a consortium based around the UK with the aim of facilitating recruitment of a sample tested with fTCD that would be large enough to give a convincing test of our hypotheses. In addition, we take into consideration the fact that this is a two-stage study, with online testing followed by in-person testing. Recruitment for online testing is considerably easier and less costly than in-person testing. The timing of in-person testing remains uncertain due to pandemic restrictions, and this means that we may see considerable attrition between stages 1 and 2.  Our strategy is first to determine sample size based on power considerations for stage 2, then to double that sample size for online testing, assuming there will be 50% attrition between stages 1 and 2. In addition, we check the power that this gives us for stage 1 testing. Accordingly, we report power analyses in reverse order for stage 2 and then stage 1.
+
+
+## Single group confirmatory factor analysis models (one vs two factor)
+
+Sample size determination has two aspects: 1. We need to have sufficient sample size to fit individual models with acceptable fit indices, regardless of whether these is one factor or two factors; 2. There should be adequate power to detect the misspecified model (one factor) vs our postulated ‘true’ model (two factor). We started with the analysis by Wolf et al (2013) @Wolf_2013. These authors reported results from Monte Carlo simulation for a range of simple CFA models, varying the numbers of factors, numbers of measured variables, and magnitudes of factor loadings, in order to evaluate statistical power, bias in parameter estimates and incidence of model convergence problems. Our proposed model comes closest to their simulation of a 2-factor model with 3 indicators per factor; the minimum sample size required to achieve 80% power depends on the strength of standardized factor loadings, ranging between 120-200 for loadings of .65 or .8 respectively. This is in line with our next analysis, which estimates power to detect the difference between a one- and two-factor model.
+
+
+### Power estimate for the model comparison of proposed 'true' model vs proposed mispecified model.
+
+The `R` package `semPower` [@Moshagen_2016] can be used to calculate the power for detecting a difference between nested models, using data simulated from both models. Our model comparison is closely similar to that used in the vignette for the semPower package by @Moshagen_2020, which includes one example where the interest is in whether responses on 8 items reflect two separate but correlated factors, or whether they can be described by a single factor. This is directly parallel to our prediction 3.  
+
+A further example illustrates a power test for invariance constraints in a multiple group model, where the question is whether a model with freely estimated loadings performs better than the case where the model is equalised for the two groups: this addresses our prediction 4.  
+
+The starting point for both examples is a two-group model. Here we use modified versions of the scripts from the two `semPower` examples, adapted account for characteristics of our data. 
+
+<!-- ![2 factor model](/Users/dorothybishop/deevybee_repo/COLA_RR_phase1_2/factorpic.jpg) -->
+
+We first need to define a suitable model that describes the true situation in the population. In our case, we use relevant data from our previous study (Woodhead et al, 2019, 2020) to guide our estimates. This had data on 30 left-handers and 40 right-handers from six measures, four of which we plan to use in the current study, two loading on each of the postulated factors. These are Sentence Generation, Phonological Decision, Syntactic Decision, and Sentence Comprehension; we term these x1, x2, x4 and x5. The additional two measures, x3 and x6, correspond to Word Generation and Word Comprehension, which are selected to act as additional indicators of the language generation and receptive language factors respectively. To simulate data for x1, x2, x4 and x5 we use Session 1 LIs from the Woodhead et al data, and to simulate x3 we take the mean from Session 2 for x1 and x2; to simulate x6 we take the mean from x4 and x5 from Session 2. This generates a correlation matrix as shown in Table x. 
+
+
+```{r sim.online, echo = FALSE}
+#base predictions on observed data from study A2
+myA2 <- read.csv('https://osf.io/fr5na/download') #read from OSF stored file
+#We will have 2 new measures, one for factor A and one for factor B
+#To simulate data, we will assume that we can estimate these by taking mean of the other two variables loading on that factor from the 2nd session - i.e. the data are independent from session 1.
+#simulate correlation matrix by taking Factor A:
+#PhonDec1,SentGen1 and mean PhonDec2/SentGen2
+#vs Factor B: SentComp1,Jabber1,and mean SentComp2/Jabber2
+myA2$PhonSent2 <- (myA2$PhonDec2+myA2$SentGen2)/2
+myA2$CompJabb2 <- (myA2$SentComp2+myA2$Jabber2)/2 #(was wrongly specified as SentGen2 in original script)
+corrcolumns <- c(3,5,33,6,7,34)
+
+
+my_A2<-na.omit(myA2[,c(32,3,5,33,6,7,34)]) #just handedness and the 6 columns of interest retained
+colnames(my_A2)<- c('hand','x1','x2','x3','x4','x5','x6')
+mycortab <- correlate(my_A2[,2:7]) #check that correlation pattern looks realistic
+ft<-flextable(mycortab)
+ft <- colformat_num(x = ft,digits = 2)
+ft <-set_caption(x=ft,"Correlations: simulated population model")
+ft
+
+#Recording the means and sds by handedness here - helps interpretation later
+#Left handers have larger sd for all
+myagmean <- aggregate(my_A2[,2:7],by=list(my_A2$hand),FUN=mean)
+myagsd <- aggregate(my_A2[,2:7],by=list(my_A2$hand),FUN=sd)
+```
+
+We next need to specify loadings for a population model compatible with our simulated data. Here we first derive loadings from fitting the simulated (my_A2) data.
+```{r getloadings, include =FALSE, echo=FALSE}
+model.2f <- '
+f1 =~ x1 + x2  + x3 
+f2 =~ x4 + x5  +x6 
+'
+fit.mod2f <- cfa(model.2f,data=my_A2)
+#summary(fit.mod2f, fit.measures=TRUE)
+
+mys <- coef(fit.mod2f)#unstandardized coefficients; f1-x1 and f2-x4 are fixed at 1
+mys <- c(1,coef(fit.mod2f)[1:2],1,coef(fit.mod2f)[3:13])
+```
+We defined a 'true' two-factor population model, H0, using these factor loadings. This will be compared with an alternative, H1, single-factor model. In effect, we ask whether these two models could be differentiated on the basis of the covariance matrix from the simulated data.
+
+
+```{r makepopmodel,include =FALSE, echo=FALSE}
+# define population model (= H0)
+# Creating the formula using paste is rather confusing, but it does ensure we plug the correct loadings in to the model
+model.pop<-paste0('f1 =~  x1 + ',
+                  mys[2],'* x2 + ',
+                  mys[3],'* x3  
+                  f2 =~  x4 + ',
+                  mys[5],'* x5 + ',
+                  mys[6],'* x6  
+                  f1~~', mys[15 ],'*f2')
+
+# define (wrong) H1 model - f1 and f2 perfectly correlated, ie one factor
+model.h1 <- '
+f1 =~ x1 + x2 + x3
+f2 =~ x4 + x5 + x6
+
+f1 ~~ 1*f2
+
+' 
+```
+Now we make a predicted covariance matrix for the population model and the alternative 1-factor model.
+
+```{r popcov,include =FALSE, echo=FALSE, warning=F}
+
+# get population covariance matrix; equivalent to a perfectly fitting H0 model
+cov.h0 <- fitted(sem(model.pop))$cov
+
+# get covariance matrix as implied by H1 model
+res.h1 <- sem(model.h1, sample.cov = cov.h0, sample.nobs = 1000, likelihood='wishart')
+#gives lavaan WARNING: starting values imply a correlation larger than 1;variables involved are:  f1   f2 
+df <- res.h1@test[[1]]$df
+cov.h1 <- fitted(res.h1)$cov
+```
+
+```{r dopower,include =FALSE, echo=FALSE}
+# perform power analysis specifying 90% power
+ap_1vs2 <- semPower.aPriori(SigmaHat = cov.h1, Sigma = cov.h0, alpha = .05, power = .90, df = df)
+summary(ap_1vs2) #displays all content
+
+```
+
+This analysis estimates that for 90% power, we require a minimum sample size of `r ap_1vs2$requiredN`.
+
+
+## Multigroup model (two factor multigroup CFA - left and right handers groups)
+
+This analysis is based on the second extended example in the semPower manual.  
+We fit our two-factor model to two groups (left- and right-handers) and are interested in whether the same model applies to both groups. Thus we compare a model with freely estimated parameters against a model restricting the parameters to be equal across groups. If the the fit of the latter model is significantly worse, this supports the conclusion that the underlying model structure differs for the two groups.  
+
+We first specify a population model for each of the two groups. As before, we use the my_A2 data to derive estimated loadings, this time separately for each handedness group.
+
+```{r leftrightcovs,include =FALSE, echo=FALSE}
+#These were computed for sanity check, but not used
+cov.sampleR<-cov(my_A2[my_A2$hand=='R',2:7])
+cov.sampleL<-cov(my_A2[my_A2$hand=='L',2:7])
+meansR <- colMeans(my_A2[my_A2$hand=='R',2:7])
+meansL <- colMeans(my_A2[my_A2$hand=='L',2:7])
+
+```
+
+We also specify 'meanstructure' to allow us to see how means differ between handedness groups, though this is not a central feature of interest for this analysis.  Table x shows the parameter estimates for the two handedness groups.
+```{r model2fac,include =FALSE, echo=FALSE}
+
+model.2f <- '
+f1 =~ x1 + x2  + x3 
+f2 =~ x4 + x5  + x6 
+'
+
+fit.mod2f <- cfa(model.2f,data=my_A2,group="hand", meanstructure=T)
+summary(fit.mod2f, fit.measures=TRUE)
+
+A6.coef <- coef(fit.mod2f) #try using parameters from standardized solution in population model
+
+#We will wrangle this into a table to make it easier to compare groups.
+A6.coeftab<-data.frame(matrix(NA,nrow=19,ncol=3))
+colnames(A6.coeftab)<-c('Estimate','Rhander','Lhander')
+A6.coeftab$Estimate<-names(A6.coef)[1:19]
+A6.coeftab$Rhander <- round(A6.coef[1:19],3)
+A6.coeftab$Lhander <- round(A6.coef[20:38],3)
+
+ft<-flextable(A6.coeftab)
+ft <-set_caption(x=ft,"Two-factor model: estimated loadings for right- and left-handers")
+ft
+
+```
+
+We use the estimated factor loadings and covariance to specify separate population models for the two groups.  
+```{r semPowerextended.eg,include =FALSE, echo=FALSE}
+#population model group 1 
+
+model.pop.R<-paste0('f1 =~  1*x1 + ',
+                    A6.coeftab[1,2],'* x2 + ',
+                    A6.coeftab[2,2],'* x3  
+                  f2 =~  1*x4 + ',
+                  A6.coeftab[3,2],'* x5 + ',
+                  A6.coeftab[4,2],'* x6 
+                  x1~~', A6.coeftab[5,2],'*x1
+                  x2~~', A6.coeftab[6,2],'*x2
+                  x3~~', A6.coeftab[7,2],'*x3
+                  x4~~', A6.coeftab[8,2],'*x4
+                  x5~~', A6.coeftab[9,2],'*x5
+                  x6~~', A6.coeftab[10,2],'*x6
+                  f1~~', A6.coeftab[13,2],'*f2
+                  f1~~', A6.coeftab[11,2],'*f1
+                  f2~~', A6.coeftab[12,2],'*f2')
+#population model group 2 
+model.pop.L<-paste0('f1 =~  1*x1 + ',
+                    A6.coeftab[1,3],'* x2 + ',
+                    A6.coeftab[2,3],'* x3  
+                  f2 =~  1*x4 + ',
+                  A6.coeftab[3,3],'* x5 + ',
+                  A6.coeftab[4,3],'* x6 
+                  x1~~', A6.coeftab[5,3],'*x1
+                  x2~~', A6.coeftab[6,3],'*x2
+                  x3~~', A6.coeftab[7,3],'*x3
+                  x4~~', A6.coeftab[8,3],'*x4
+                  x5~~', A6.coeftab[9,3],'*x5
+                  x6~~', A6.coeftab[10,3],'*x6
+                  f1~~', A6.coeftab[13,3],'*f2
+                  f1~~', A6.coeftab[11,3],'*f1
+                  f2~~', A6.coeftab[12,3],'*f2')
+
+```
+
+Now we work out population covariances for the 2 groups
+```{r groupLRcovs,include =FALSE, echo=FALSE, warnings=F}
+cov.pop.R <- fitted(sem(model.pop.R))$cov
+cov.pop.L <- fitted(sem(model.pop.L))$cov
+
+```
+
+## Measurement Invariance
+
+Configural invariance (sometimes known as pattern invariance) ensures that both groups follow the same pattern of factor loadings, i.e. same items load on to the same factors in both groups. Configural invariance is assumed in this study as this was previously established by Woodhead et al. (2020). We next test weak measurement invariance which tests whether factor loadings are the same for each group. 
+
+### Weak Measurement Invariance - same loadings (slopes) values for both groups.
+
+Next we define and estimate the first analysis model, setting loadings to be equal - i.e. the alternative model (saturated model with no group constraints) tests whether the fit is as good when the simulated data are tested against a simpler model that has same loadings for both handedness groups.
+
+```{r weak_measurement_invariance,echo=F}
+model.hcommon <- '
+f1 =~ x1+x2+x3
+f2 =~ x4+x5+x6
+'
+
+# fit analysis model to population data; note the sample.nobs are arbitrary
+fit.hcommon <- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings'), likelihood='wishart',meanstructure=T,sample.cov.rescale=F)
+# get model implied covariance matrices
+cov.hcommon.R<- fitted(fit.hcommon)$`Group 1`$cov
+cov.hcommon.L <- fitted(fit.hcommon)$`Group 2`$cov
+# store df
+df <- fit.hcommon@test[[1]]$df
+
+fit.bl<- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), likelihood='wishart',sample.cov.rescale=F)
+
+df.bl<-fit.bl@test[[1]]$df
+
+df.diff<-df-df.bl
+
+```
+
+We can now perform power-analysis for weak measurement invariance.  
+
+```{r power_weak}
+# perform a priori power analysis
+# Note that lavaan handles multiple group models by having covariance matrices specified as lists containing the associated matrices for each group.  
+ap6_weak <- semPower.aPriori(SigmaHat = list(cov.hcommon.R, cov.hcommon.L), 
+                        Sigma = list(cov.pop.R, cov.pop.L), 
+                        alpha = .05, power=.9, N=list(3,2),df = df.diff)
+
+summary(ap6_weak)
+
+```
+
+The power analysis gives a minimum sample size of `r ap6_weak$requiredN`. 
+
+
+
+### Strong Measurement Invariance - same loadings (slopes) and item intercept and means values for both groups.
+
+Next we define and estimate the second analysis model, setting loadings and item intercepts to be equal - i.e. the alternative model (loading and intercept constraints) tests whether the fit is as good when the simulated data are tested against a simpler model (loadings only) that has same loadings for both handedness groups. An additional step is to test the constraint on the items means. 
+
+```{r strong_measurement_invariance1,echo=F}
+model.hcommon <- '
+f1 =~ x1+x2+x3
+f2 =~ x4+x5+x6
+'
+
+# fit analysis model to population data; note the sample.nobs are arbitrary
+fit.hcommon <- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings',"intercepts"), likelihood='wishart',meanstructure=T,sample.cov.rescale=F)
+# get model implied covariance matrices
+cov.hcommon.R<- fitted(fit.hcommon)$`Group 1`$cov
+cov.hcommon.L <- fitted(fit.hcommon)$`Group 2`$cov
+# store df
+df <- fit.hcommon@test[[1]]$df
+
+fit.bl<- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings'), likelihood='wishart',sample.cov.rescale=F)
+
+df.bl<-fit.bl@test[[1]]$df
+
+df.diff<-df-df.bl
+
+```
+
+We can now perform power-analysis for strong measurement invariance.  
+
+```{r power_strong1}
+# perform a priori power analysis
+# Note that lavaan handles multiple group models by having covariance matrices specified as lists containing the associated matrices for each group.  
+ap6_strong <- semPower.aPriori(SigmaHat = list(cov.hcommon.R, cov.hcommon.L), 
+                        Sigma = list(cov.pop.R, cov.pop.L), 
+                        alpha = .05, power=.9, N=list(3,2),df = df.diff)
+
+summary(ap6_strong)
+
+```
+
+The power analysis for loadings and intercepts gives a minimum sample size of `r ap6_strong$requiredN`. 
+
+
+```{r strong_measurement_invariance2,echo=F}
+model.hcommon <- '
+f1 =~ x1+x2+x3
+f2 =~ x4+x5+x6
+'
+
+# fit analysis model to population data; note the sample.nobs are arbitrary
+fit.hcommon <- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings',"intercepts","means"), likelihood='wishart',meanstructure=T,sample.cov.rescale=F)
+# get model implied covariance matrices
+cov.hcommon.R<- fitted(fit.hcommon)$`Group 1`$cov
+cov.hcommon.L <- fitted(fit.hcommon)$`Group 2`$cov
+# store df
+df <- fit.hcommon@test[[1]]$df
+
+fit.bl<- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings'), likelihood='wishart',sample.cov.rescale=F)
+
+df.bl<-fit.bl@test[[1]]$df
+
+df.diff<-df-df.bl
+
+```
+
+We can now perform power-analysis for strong measurement invariance including item means.  
+
+```{r power_strong2}
+# perform a priori power analysis
+# Note that lavaan handles multiple group models by having covariance matrices specified as lists containing the associated matrices for each group.  
+ap6_strong2 <- semPower.aPriori(SigmaHat = list(cov.hcommon.R, cov.hcommon.L), 
+                        Sigma = list(cov.pop.R, cov.pop.L), 
+                        alpha = .05, power=.9, N=list(3,2),df = df.diff)
+
+summary(ap6_strong2)
+
+```
+
+The power analysis for loadings, intercepts and means gives a minimum sample size of `r ap6_strong2$requiredN`. 
+
+### Strict Measurement Invariance - same loadings, item intercepts and item means, and measurement error values for both groups.
+
+Next we define and estimate the fourth analysis model, setting loadings, item intercepts and means, and measurement errors to be equal - i.e. the alternative model (loadings, item intercepts and means, and errors) tests whether the fit is as good when the simulated data are tested against a simpler model (unconstrained errors) that has same loadings for both handedness groups. This is usually only necessary to ensure that invariance of item reliabilities in both groups.
+
+```{r strict_measurement_invariance,echo=F}
+model.hcommon <- '
+f1 =~ x1+x2+x3
+f2 =~ x4+x5+x6
+'
+
+# fit analysis model to population data; note the sample.nobs are arbitrary
+fit.hcommon <- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings',"intercepts","means","residuals","residual.covariances"), likelihood='wishart',meanstructure=T,sample.cov.rescale=F)
+# get model implied covariance matrices
+cov.hcommon.R<- fitted(fit.hcommon)$`Group 1`$cov
+cov.hcommon.L <- fitted(fit.hcommon)$`Group 2`$cov
+# store df
+df <- fit.hcommon@test[[1]]$df
+
+fit.bl<- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings','intercepts','means'), likelihood='wishart',sample.cov.rescale=F)
+
+df.bl<-fit.bl@test[[1]]$df
+
+df.diff<-df-df.bl
+
+```
+
+We can now perform power-analysis for strict measurement invariance.  
+
+```{r power_strict}
+# perform a priori power analysis
+# Note that lavaan handles multiple group models by having covariance matrices specified as lists containing the associated matrices for each group.  
+ap6_strict <- semPower.aPriori(SigmaHat = list(cov.hcommon.R, cov.hcommon.L), 
+                        Sigma = list(cov.pop.R, cov.pop.L), 
+                        alpha = .05, power=.9, N=list(3,2),df = df.diff)
+
+summary(ap6_strict)
+
+```
+
+The power analysis gives a minimum sample size of `r ap6_strict$requiredN`. 
+
+## Structural Invariance
+
+Structural invariance is specific to the factors, testing whether firstly factor variances and covariances are invariant across groups, then factor means. We are interested in whether the factor covariances are different across groups so we only test this prediction here
+
+```{r structural_invariance,echo=F}
+model.hcommon <- '
+f1 =~ x1+x2+x3
+f2 =~ x4+x5+x6
+'
+
+# fit analysis model to population data; note the sample.nobs are arbitrary
+fit.hcommon <- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings',"intercepts","means","residuals","residual.covariances","lv.variances","lv.covariances"), likelihood='wishart',meanstructure=T,sample.cov.rescale=F)
+# get model implied covariance matrices
+cov.hcommon.R<- fitted(fit.hcommon)$`Group 1`$cov
+cov.hcommon.L <- fitted(fit.hcommon)$`Group 2`$cov
+# store df
+df <- fit.hcommon@test[[1]]$df
+
+fit.bl<- sem(model.hcommon, sample.cov = list(cov.pop.R, cov.pop.L), sample.nobs = list(1000, 1000), group.equal = c('loadings','intercepts','means',"residuals","residual.covariances"), likelihood='wishart',sample.cov.rescale=F)
+
+df.bl<-fit.bl@test[[1]]$df
+
+df.diff<-df-df.bl
+
+```
+
+We can now perform power-analysis for structural invariance.  
+
+```{r power_structural}
+# perform a priori power analysis
+# Note that lavaan handles multiple group models by having covariance matrices specified as lists containing the associated matrices for each group.  
+ap6_structural <- semPower.aPriori(SigmaHat = list(cov.hcommon.R, cov.hcommon.L), 
+                        Sigma = list(cov.pop.R, cov.pop.L), 
+                        alpha = .05, power=.9, N=list(3,2),df = df.diff)
+
+summary(ap6_structural)
+
+```
+
+The power analysis gives a minimum sample size of `r ap6_structural$requiredN`. 
+
+```{r pwer_table}
+
+powertab<-data.frame(Test=c('Weak Invariance','Strong Invariance','Strong Invariance (means)','Strict Invariance','Structural Invariance'),N=c(ap6_weak$requiredN,ap6_strong$requiredN,ap6_strong2$requiredN,ap6_strict$requiredN,ap6_structural$requiredN))
+
+ft<-flextable(powertab)
+ft <- colformat_num(x = ft,digits = 0)
+ft <- autofit(ft)
+ft <-set_caption(x=ft,"Sample size required for 90% power")
+ft
+
+```
+
+### Prediction 5
+Prediction 5 concerns categorical analysis. A simple approach is to binarise laterality at a cutoff of zero for each task, and then perform a chi square analysis to test for association with handedness.  For 6 measures, we adopt a Bonferroni-corrected alpha level of .05/6 = .008.
+
+We can first examine sensitivity of this approach with the original sample of Woodhead et al (2020). 
+
+```{r chisq.cats, include=F, echo=F, warning=F}
+#initialise catx variables: 1 for +ve and - for negative
+my_A2$catx1<-1
+my_A2$catx2<-1
+my_A2$catx3<-1
+my_A2$catx4<-1
+my_A2$catx5<-1
+my_A2$catx6<-1
+
+chitab<-data.frame(matrix(NA,ncol=11,nrow=6))
+for (mycol in 1: 6){
+  w<-which(my_A2[,(mycol+1)]<0) #find values below zero
+  my_A2[w,(mycol+7)]<-0 #recode catx value to zero
+  t<-table(my_A2[,(mycol+7)],my_A2$hand)
+  tp<-round(prop.table(t,2),2) #proportions by handedness
+  chitab[mycol,1]<-colnames(my_A2)[(mycol+1)]
+  chitab[mycol,c(2,4,6,8)]<-t
+  chitab[mycol,c(3,5,7,9)]<-tp
+  chitab[mycol,10] <- chisq.test(t)$statistic
+  chitab[mycol,11] <- chisq.test(t)$p.value
+}
+colnames(chitab)<-c('Measure','Lhand.Rbrain','LH.Rb%','Lhand.Lbrain','LH.Lb%','Rhand.Rbrain','RH.Rb%','Rhand.Lbrain','RH.Lb%','chisq','p')
+
+```
+This analysis shows that for the language production tasks, the proportions of left- and right-handers who are left-brain lateralised on the language production tasks are close to the proportions that have been obtained with other methods, such as Wada testing: around 90% for right-handers and around 60-70% for left-handers. For the receptive tasks, rates of left-brain bias decrease in both handedness groups, but a handedness effect persists.  
+
+Given these results, we aim to achieve a sample size sufficient to detect a difference in left lateralisation of 70% in left-handers vs 90% in right-handers.  This difference in percentages translates to an effect size, h, of `r 2*asin(sqrt(.9))-2*asin(sqrt(.7))`. Using the R function `pwr.2p.test` we find that for power = .9 and alpha = .05, minimum N = `r round(pwr.2p.test(h=2*asin(sqrt(.9))-2*asin(sqrt(.7)),sig.level=.05,power=.9)$n,2)`.  Thus with the sample size of 100 per handedness group, we would be well-powered to detect this difference.  
+
+## Sample size for online test battery
+To allow for attrition of participants, we plan to recruit twice as many participants for online testing as we plan to test in person, namely 200 left-handers and 200 right-handers. For testing prediction 1, this will give us 90% power to detect handedness differences in LIs of `r round(pwr.t2n.test(n1 = 200, n2=200 , sig.level = .05, power = .9,alternative='greater')$d,2) ` on one-tailed t-test. 
+
+For prediction 2 we focus on predicting patterns of covariance between the three online tasks, as we do not have sufficient indicators for modeling with latent variables. We prespecify four possible covariance structures, which are then compared using AIC weights. This is a subset of SEM that does not include any latent variables or directional paths. It allows us to constrain particular covariance patterns and report the 'best' model according AIC weights. 
+
+The four models include:  
+Model A, where all LIs are intercorrelated to a similar degree
+Model B1,  where LIs for the two receptive language measures (dichotic listening and optimal viewing task) are intercorrelated, but independent of rhyme detection
+Model B2, where LIs for the two tasks involving visual presentation and written language (optimal viewing and rhyme detection) are intercorrelated, and independent of the auditory task, dichotic listening.
+Model C, where all LIs are independent of one another.
+
+Models B1 and B2 are mathematically equivalent, differing only in the specific variables that are correlated. On a priori grounds, we favour model B1, which is compatible with our overall 2-factor model of language lateralisation. In order to compare models, we need to simulate data corresponding to each model type, and then evaluate how frequently the correct model is identified with our planned sample size of 400 participants.
+
+```{r sim_dat}
+#========================================================================#
+# simulate multivariate normal data to test ESEM model on three outcomes.#
+#========================================================================#
+#Although we have 4 models, 2 (C and D) are computationally equivalent.
+#In terms of power they will be the same, even though we are making predictions about different sets of tests.
+sim_data<-function(n=400,r=.5)
+  #we assume tasks are ovp,dichotic, and rhyme
+{
+  
+  #========================================================================#
+  sigA <- matrix(c(1,	r,r,
+                   r, 1, r,
+                   r, r, 1),3,3,byrow=TRUE)
+  data_A <- mvrnorm(n=n, mu = c(0,0,0), Sigma=sigA) #all correlated
+  #========================================================================#
+  sigB <- matrix(c(1,	r,	0,
+                   r, 1, 0,
+                   0, 0, 1),3,3,byrow=TRUE)
+  data_B <- mvrnorm(n=n, mu = c(0,0,0), Sigma=sigB)
+  #ovp and dichotic correlated, rhyme independent
+  #========================================================================#
+  sigC <- matrix(c(1,	0,	0,
+                   0, 1, 0,
+                   0, 0, 1),3,3,byrow=TRUE)
+  data_C <- mvrnorm(n=n, mu = c(0,0,0), Sigma=sigC) #all independent
+  #========================================================================#
+  
+  
+  data_A<-as.data.frame(data_A)
+  data_B<-as.data.frame(data_B)
+  data_C<-as.data.frame(data_C)
+  
+  names(data_A)<-names(data_B)<-names(data_C)<-c("rhyme","dichotic","ovp")
+  
+  return(list(data_A=data_A,data_B=data_B,data_C=data_C))
+}
+#========================================================================#
+```
+
+```{r aicmodels}
+#Specify models
+
+  #Model A all correlated
+    modelA<-"
+    rhyme~~dichotic
+    rhyme~~ovp
+    dichotic~~ovp
+    "
+    #Model B 2 correlated
+    modelB<-"
+    rhyme~~dichotic
+    rhyme~~0*ovp
+    dichotic~~0*ovp"
+    
+    #model C all independent
+    modelC<-"
+    rhyme~~0*dichotic
+    rhyme~~0*ovp
+    dichotic~~0*ovp"
+
+    modelBB<-"
+    rhyme~~0*dichotic
+    rhyme~~ovp
+    dichotic~~0*ovp"
+    
+```    
+
+```{r makedata, warning = F}
+myN <- 400 #sample size
+myr <- .5 #correlation for intercorrelated variables
+mydat<-sim_data(myN,myr)  #simulates sets of data for all 3 models
+
+
+niter<-1000
+AICdf <- data.frame(matrix(NA,nrow=niter,ncol=14))
+colnames(AICdf)<-c('modelA.dataA','modelB.dataA','modelC.dataA',
+                   'modelA.dataB','modelB.dataB','modelC.dataB',
+                   'modelA.dataC','modelB.dataC','modelC.dataC',
+                   'bestfit.dataA','bestfit.dataB','bestfit.dataC',
+                   'dataB.sigBvsC','modelBB.dataB')
+  
+  for(i in 1:niter)
+  {
+    sims <- sim_data(n=myN)
+     #Using data simulated from model A (all correlated), test all models
+    fit1A <- cfa(modelA, data=sims$data_A) #model has zero DF!
+    fit2A <- cfa(modelB, data=sims$data_A)
+    fit3A <- cfa(modelC, data=sims$data_A)
+    
+   aic_vector1<- c(fitMeasures(fit1A, "aic"),fitMeasures(fit2A, "aic"),fitMeasures(fit3A, "aic"))
+    
+    #Using data simulated from 2-correlated model, test all models
+   #We also test model BB, where 2 are correlated, but the wrong 2
+    fit1B <- cfa(modelA, data=sims$data_B)#model has zero DF!
+    fit2B <- cfa(modelB, data=sims$data_B)
+    fit3B <- cfa(modelC, data=sims$data_B)
+    fit4BB <- cfa(modelBB,data=sims$data_B) 
+    
+    aic_vector2 <- c(fitMeasures(fit1B, "aic"),fitMeasures(fit2B, "aic"),fitMeasures(fit3B, "aic"))
+    
+    #Using data simulated from  model C (all uncorrelated), test all  models
+    fit1C <- cfa(modelA, data=sims$data_C)#model has zero DF!
+    fit2C <- cfa(modelB, data=sims$data_C)
+    fit3C <- cfa(modelC, data=sims$data_C)
+    
+    aic_vector3 <- c(fitMeasures(fit1C, "aic"),fitMeasures(fit2C, "aic"),fitMeasures(fit3C, "aic"))
+    
+    aic_vector4 <-c(fitMeasures(fit4BB,'aic'),fitMeasures(fit2B, "aic"))
+    
+    #Anticipate that for each model, lowest AIC obtained when the simulated data do match the model
+    # 
+    # The AIC weights make massive difference for preferred model
+    AICdf[i,1:3]<-akaike.weights(aic_vector1)$weights
+     AICdf[i,4:6]<-akaike.weights(aic_vector2)$weights
+    AICdf[i,7:9]<-akaike.weights(aic_vector3)$weights
+    AICdf$bestfit.dataA[i] <- which(AICdf[i,1:3]==max(AICdf[i,1:3]))
+    AICdf$bestfit.dataB[i] <- which(AICdf[i,4:6]==max(AICdf[i,4:6]))
+    AICdf$bestfit.dataC[i] <- which(AICdf[i,7:9]==max(AICdf[i,7:9]))
+    
+#If true model is model B, can it be distinguished from model C (all independent)
+    AICdf$dataB.sigBvsC[i] <- anova(fit2B,fit3B)$`Pr(>Chisq)`[2]
+    
+   BvsBB<-akaike.weights(aic_vector4)$weights[1] #comparison of true vs wrong assignment to correlations for model B; if this is < .5, then true model is better.
+     AICdf[i,14]<-ifelse(BvsBB<.5,1,0)
+}
+
+myt1<-table(AICdf$bestfit.dataA)
+myt2<-table(AICdf$bestfit.dataB)
+myt3<-table(AICdf$bestfit.dataC)
+myt4<-table(AICdf$modelBB.dataB)
+powerBC <-length(which(AICdf$dataB.sigBvsC<.05))/niter
+rr<-round(myr*100,0)
+AICname<-paste0('AICdf_r',rr,'niter',niter,'.csv')
+write.csv(AICdf,AICname,row.names=F)
+```
+
+On 1000 runs, data for 400 participants were simulated to correspond to model B1, with a correlation of .5 between rhyme judgement and OVP, and zero correlation of these LIs with dichotic listening. On `r (100*myt2[2]/niter)`% of runs, model B1 had the highest value of Akaike weights, with model A (all tests correlated) on  the other `r (100*myt2[1]/niter)`% of runs. On `r 100*powerBC` % of runs, the correct model was significantly superior to model C (zero correlation between LIs), as evidenced by a significant chi square value on likelihood ratio test between models. Model B1 always had higher Akaike weights than model B2, when the data were generated from model B1. On the other hand, if data were generated from model C, ie. a true null model, with zero correlation between the three LIs, then model B1 gave highest Akaike weights on `r (100*myt3[2]/niter)`% of runs, and model A (all correlated) gave highest Akaike weights on `r (100*myt3[1]/niter)`%  of runs. <!---warning: there might be circumstances where this lookup of power values could be out . It depends on myt3 having values for all 3 models--->
+
+
+# References
